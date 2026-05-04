@@ -5,7 +5,7 @@ import { createLeadAction } from './actions/leadAction';
 
 export default function HeadlessLeadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{leadId: string} | null>(null);
+  const [successData, setSuccessData] = useState<{leadId: string; method: string} | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -15,7 +15,7 @@ export default function HeadlessLeadForm() {
     const response = await createLeadAction(formData);
     
     if (response.success && response.leadId) {
-      setSuccessData({ leadId: response.leadId });
+      setSuccessData({ leadId: response.leadId, method: response.method || 'Headless API' });
     } else {
       alert("Error: " + response.error);
     }
@@ -39,7 +39,10 @@ export default function HeadlessLeadForm() {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center shadow-2xl shadow-indigo-500/10">
             <div className="w-20 h-20 bg-green-500/10 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">✓</div>
             <h2 className="text-2xl font-bold mb-2">Lead Successfully Created!</h2>
-            <p className="text-slate-400 mb-8">The record was injected directly into Salesforce via MCP.</p>
+            <p className="text-slate-400 mb-4">The record was injected directly into Salesforce via Headless 360.</p>
+            <div className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-6" style={{background: successData.method === 'MCP' ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.15)', color: successData.method === 'MCP' ? '#818cf8' : '#22c55e'}}>
+              Protocol: {successData.method === 'MCP' ? '⚡ MCP Streamable HTTP' : '🔗 Salesforce REST API'}
+            </div>
             
             <div className="bg-slate-950 rounded-2xl p-6 mb-8 border border-slate-800 text-left flex flex-col gap-2">
               <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Salesforce Record ID</div>
