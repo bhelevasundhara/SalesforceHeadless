@@ -1,65 +1,99 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState } from 'react';
+import { createLeadAction } from './actions/leadAction';
+
+export default function HeadlessLeadForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successData, setSuccessData] = useState<{leadId: string} | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const response = await createLeadAction(formData);
+    
+    if (response.success && response.leadId) {
+      setSuccessData({ leadId: response.leadId });
+    } else {
+      alert("Error: " + response.error);
+    }
+    
+    setIsSubmitting(false);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-xl">
+        
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-extrabold tracking-tight mb-3">
+            Salesforce <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">Headless 360</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+          <p className="text-slate-400">Direct MCP Data Injection Demo</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* Success State */}
+        {successData ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center shadow-2xl shadow-indigo-500/10">
+            <div className="w-20 h-20 bg-green-500/10 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">✓</div>
+            <h2 className="text-2xl font-bold mb-2">Lead Successfully Created!</h2>
+            <p className="text-slate-400 mb-8">The record was injected directly into Salesforce via MCP.</p>
+            
+            <div className="bg-slate-950 rounded-2xl p-6 mb-8 border border-slate-800 text-left flex flex-col gap-2">
+              <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Salesforce Record ID</div>
+              <div className="text-lg font-mono text-indigo-400">{successData.leadId}</div>
+            </div>
+            
+            <button onClick={() => setSuccessData(null)} className="w-full py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors">
+              Submit Another Lead
+            </button>
+          </div>
+        ) : (
+          /* Form UI */
+          <div className="bg-slate-900 border border-slate-800 p-8 md:p-10 rounded-3xl shadow-2xl shadow-black/50">
+            <h2 className="text-xl font-bold mb-8">New Business Lead</h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">First Name</label>
+                  <input required name="firstName" className="w-full bg-slate-950 p-4 rounded-xl border border-slate-800 focus:border-indigo-500 outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Last Name</label>
+                  <input required name="lastName" className="w-full bg-slate-950 p-4 rounded-xl border border-slate-800 focus:border-indigo-500 outline-none transition-colors" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Company Name</label>
+                <input required name="company" className="w-full bg-slate-950 p-4 rounded-xl border border-slate-800 focus:border-indigo-500 outline-none transition-colors" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Email</label>
+                  <input required type="email" name="email" className="w-full bg-slate-950 p-4 rounded-xl border border-slate-800 focus:border-indigo-500 outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Phone</label>
+                  <input required type="tel" name="phone" className="w-full bg-slate-950 p-4 rounded-xl border border-slate-800 focus:border-indigo-500 outline-none transition-colors" />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full mt-6 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20"
+              >
+                {isSubmitting ? 'Transmitting to Salesforce...' : 'Submit to Salesforce via MCP'}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,11 +1,7 @@
 'use server'
 
-import { EventSource } from 'eventsource';
-// @ts-ignore
-global.EventSource = EventSource;
-
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 export async function createLeadAction(formData: FormData) {
   const data = {
@@ -17,25 +13,11 @@ export async function createLeadAction(formData: FormData) {
     Description: 'Lead generated via Headless MCP Next.js Portal'
   };
 
-  // The Server URL from your Salesforce MCP Servers page
-  const mcpServerUrl = new URL('https://api.salesforce.com/platform/mcp/v1/platform/sobject-all');
-  
-  // NOTE: You need to pass your Salesforce Access Token to authenticate against the hosted MCP server.
-  // In a real app, this would be fetched via Client Credentials or JWT Bearer flow.
-  const accessToken = process.env.SF_ACCESS_TOKEN;
-  
-  if (!accessToken) {
-      console.warn("SF_ACCESS_TOKEN not found in environment variables. Connection may fail.");
-  }
-
-  // 1. Initialize the SSE Transport to connect to the Salesforce Hosted MCP Server
-  // We pass the Authorization header in the requestInit for the SSE connection
-  const transport = new SSEClientTransport(mcpServerUrl, {
-    requestInit: {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    }
+  // Use the local Salesforce CLI MCP server, explicitly targeting the correct org
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['-y', '@salesforce/mcp', '-o', 'vasundharab@softclouds.com.dev', '--toolsets', 'data'],
+    env: { ...process.env } as Record<string, string>
   });
 
   const client = new Client({ name: 'bobcat-nextjs-portal', version: '1.0.0' }, { capabilities: {} });
@@ -43,7 +25,11 @@ export async function createLeadAction(formData: FormData) {
   try {
     await client.connect(transport);
 
-    // 2. Use the 'createSobjectRecord' tool defined in the sobject-all server
+    // First, list available tools so we can see what's exposed
+    const tools = await client.listTools();
+    console.log('Available MCP Tools:', JSON.stringify(tools.tools.map(t => t.name), null, 2));
+
+    // Use the 'createSobjectRecord' tool defined in the sobject-all server
     const result = await client.callTool({
       name: 'createSobjectRecord', 
       arguments: {
